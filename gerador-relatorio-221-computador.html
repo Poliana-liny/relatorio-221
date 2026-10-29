@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<title>Gerador Relatório 221</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+/* Layout: editor em coluna única no celular; no computador, editor + prévia lateral. Barra de ações fixa embaixo. */
+:root{
+  --bg:#f2f4f6; --panel:#ffffff; --fg:#17212b; --muted:#5b6976; --line:#d6dde3;
+  --accent:#2e5a7a; --accent-fg:#ffffff; --accent-soft:#e2ebf2; --danger:#b3261e; --paper:#ffffff;
+  --sans:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#11161b; --panel:#1a2128; --fg:#e3e9ef; --muted:#93a1ae; --line:#2d3842;
+  --accent:#74a7cc; --accent-fg:#0c1720; --accent-soft:#1e3141; --danger:#f2867e; --paper:#f4f4f2; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11161b; --panel:#1a2128; --fg:#e3e9ef; --muted:#93a1ae; --line:#2d3842;
+  --accent:#74a7cc; --accent-fg:#0c1720; --accent-soft:#1e3141; --danger:#f2867e; --paper:#f4f4f2; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--sans);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{padding-block:16px 4px}
+header.top h1{margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+header.top p{margin:4px 0 0;color:var(--muted);font-size:13.5px;max-width:62ch}
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;padding-block:12px 110px}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+.card h2{margin:0 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:8px}
+.card h2 .num{font-family:var(--mono);color:var(--accent);font-size:13px}
+.card h2 .tools{margin-left:auto;display:flex;gap:6px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field + .field{margin-top:12px}
+label.lb{font-size:12.5px;font-weight:600}
+input[type=text],input[type=date],textarea{width:100%;font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 11px}
+textarea{font-family:var(--mono);font-size:14px;min-height:84px;resize:vertical}
+input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.hint{font-size:12.5px;color:var(--muted)}
+.row2{display:grid;grid-template-columns:170px minmax(0,1fr);gap:12px}
+.row2 .field + .field{margin-top:0}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg);padding:9px 14px;min-height:42px;-webkit-tap-highlight-color:transparent}
+button:hover{border-color:var(--accent)}
+button.icon{padding:4px 10px;min-height:36px;min-width:36px;font-size:14px;color:var(--muted)}
+button.icon.del:hover,button.icon.armed{color:var(--danger);border-color:var(--danger)}
+button.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:600}
+button.add{border-style:dashed;color:var(--accent);font-weight:600;padding:14px;background:transparent}
+.check{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--muted);margin-top:12px;min-height:32px}
+.check input{width:20px;height:20px;accent-color:var(--accent);flex:none}
+.drop{border:1.5px dashed var(--line);border-radius:8px;padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.thumb{position:relative;aspect-ratio:1;max-width:100%;border-radius:6px;overflow:hidden;border:1px solid var(--line);background:var(--bg)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .acts{position:absolute;inset:auto 0 0 0;display:flex;background:rgba(10,16,22,.62)}
+.thumb .acts button{flex:1;border:0;border-radius:0;background:none;color:#fff;padding:0;min-height:34px;font-size:13px}
+.addph{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.addph button{flex:1 1 140px;color:var(--accent);font-weight:600}
+.droptxt{grid-column:1/-1;color:var(--muted);font-size:12.5px;text-align:center;padding:8px 0}
+/* prévia */
+.preview{position:sticky;top:12px;align-self:start;max-height:calc(100vh - 130px);background:var(--panel);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;overflow:hidden}
+.pvbar{padding:8px 12px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px;font-variant-numeric:tabular-nums}
+.pages{overflow:auto;padding:14px;display:flex;flex-direction:column;gap:14px;background:var(--bg)}
+.pages canvas{width:100%;height:auto;background:var(--paper);box-shadow:0 1px 3px rgba(0,0,0,.18);border-radius:2px;display:block}
+.pages .empty{color:var(--muted);text-align:center;font-size:13px;padding:30px 10px}
+.overlay{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.overlay .pvbar{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:var(--panel)}
+.overlay .pages{flex:1}
+/* barra de ações */
+.actionbar{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--panel);border-top:1px solid var(--line);
+  padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  display:flex;gap:10px;align-items:center}
+.actionbar .stat{color:var(--muted);font-size:12.5px;font-variant-numeric:tabular-nums;margin-right:auto}
+#btnPreview{display:none}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:30;background:var(--fg);color:var(--bg);padding:9px 14px;border-radius:8px;font-size:13.5px;max-width:calc(100% - 32px);text-align:center}
+@media (max-width:980px){
+  main{grid-template-columns:1fr}
+  main > .preview{display:none}
+  #btnPreview{display:inline-block}
+}
+@media (max-width:560px){
+  .row2{grid-template-columns:1fr}
+  .row2 .field + .field{margin-top:12px}
+  .actionbar{flex-wrap:wrap}
+  .actionbar .stat{flex-basis:100%;text-align:center;margin:0}
+  .actionbar button{flex:1}
+}
+@media (hover:none){ .hide-touch{display:none} }
+@media (prefers-reduced-motion:no-preference){button{transition:border-color .15s}}
+</style>
+
+<header class="top">
+  <h1>Gerador Relatório 221</h1>
+  <p>Monte os blocos com itens, observação e fotos. O PDF sai no formato da auditoria, com data no topo e numeração de páginas.</p>
+</header>
+
+<main>
+  <div class="col">
+    <section class="card">
+      <h2>Cabeçalho</h2>
+      <div class="row2">
+        <div class="field"><label class="lb" for="fDate">Data</label><input type="date" id="fDate"></div>
+        <div class="field"><label class="lb" for="fTitle">Título</label><input type="text" id="fTitle" value="221 – Auditoria de itens sem Beep – Loja Brigadeiro."></div>
+      </div>
+      <label class="check" for="fRestart"><input type="checkbox" id="fRestart"> Reiniciar a numeração dos itens em cada bloco</label>
+    </section>
+
+    <div id="blocks" class="col"></div>
+    <button class="add" id="addBlock">+ Adicionar bloco</button>
+  </div>
+
+  <aside class="preview" id="sidePreview">
+    <div class="pvbar"><span>Prévia do PDF</span><span id="pvInfo"></span></div>
+    <div class="pages" id="sidePages"></div>
+  </aside>
+</main>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="pvbar"><button class="icon" id="closeOverlay">✕ Fechar</button><span id="ovInfo"></span><button class="primary" id="ovSave">Baixar PDF</button></div>
+  <div class="pages" id="ovPages"></div>
+</div>
+
+<div class="actionbar">
+  <span class="stat" id="stat"></span>
+  <button id="btnPreview">Ver prévia</button>
+  <button class="primary" id="btnSave">Baixar PDF</button>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<input type="file" id="pickGallery" accept="image/*" multiple hidden>
+<input type="file" id="pickCamera" accept="image/*" capture="environment" hidden>
+
+<script>
+/* ---------- estado ---------- */
+const state = { blocks: [] };
+let uid = 0, activeBlock = null, pickTarget = null;
+const $ = s => document.querySelector(s);
+
+function newBlock(d = {}) {
+  return { id: ++uid, items: d.items || "", obs: d.obs ?? "Fora da área de venda.", photos: [], arrowsPerPhoto: !!d.arrowsPerPhoto };
+}
+
+/* ---------- rascunho (só textos; fotos não cabem no armazenamento do navegador) ---------- */
+function saveDraft() {
+  try {
+    localStorage.setItem("rel221", JSON.stringify({
+      title: $("#fTitle").value, restart: $("#fRestart").checked,
+      blocks: state.blocks.map(b => ({ items: b.items, obs: b.obs, arrowsPerPhoto: b.arrowsPerPhoto }))
+    }));
+  } catch (e) {}
+}
+function loadDraft() {
+  try {
+    const d = JSON.parse(localStorage.getItem("rel221") || "null");
+    if (!d) return false;
+    if (d.title) $("#fTitle").value = d.title;
+    $("#fRestart").checked = !!d.restart;
+    state.blocks = (d.blocks || []).map(newBlock);
+    return state.blocks.length > 0;
+  } catch (e) { return false; }
+}
+
+/* ---------- interface ---------- */
+function render() {
+  const wrap = $("#blocks");
+  wrap.innerHTML = "";
+  state.blocks.forEach((b, i) => {
+    const el = document.createElement("section");
+    el.className = "card";
+    el.dataset.id = b.id;
+    el.innerHTML = `
+      <h2><span class="num">${String(i + 1).padStart(2, "0")}</span> Bloco
+        <span class="tools">
+          <button class="icon" data-act="up" aria-label="Mover bloco para cima">↑</button>
+          <button class="icon" data-act="down" aria-label="Mover bloco para baixo">↓</button>
+          <button class="icon del" data-act="del" aria-label="Excluir bloco">Excluir</button>
+        </span></h2>
+      <div class="field">
+        <label class="lb" for="it${b.id}">Itens (um por linha)</label>
+        <textarea id="it${b.id}" data-f="items" placeholder="122484 - QUEIJO MINAS FRESC MED SENSACAO KG: 761,86"></textarea>
+        <span class="hint">Formato: código - descrição: valor. Numeração e negrito do valor são automáticos.</span>
+      </div>
+      <div class="field">
+        <label class="lb" for="ob${b.id}">Observação (em negrito, com a seta)</label>
+        <input type="text" id="ob${b.id}" data-f="obs" placeholder="Fora da área de venda – Estoque Virtual (última venda 08/26)">
+      </div>
+      <div class="field">
+        <span class="lb">Fotos</span>
+        <div class="drop" data-drop>
+          ${b.photos.map((p, j) => `
+            <div class="thumb"><img src="${p.src}" alt="Foto ${j + 1} do bloco ${i + 1}">
+              <div class="acts">
+                <button data-act="pl" data-j="${j}" aria-label="Mover foto para a esquerda">◀</button>
+                <button data-act="pd" data-j="${j}" aria-label="Remover foto">✕</button>
+                <button data-act="pr" data-j="${j}" aria-label="Mover foto para a direita">▶</button>
+              </div></div>`).join("")}
+          ${b.photos.length ? "" : `<span class="droptxt">Nenhuma foto ainda<span class="hide-touch">. Arraste aqui ou cole com Ctrl+V</span></span>`}
+        </div>
+        <div class="addph">
+          <button data-act="cam">Tirar foto</button>
+          <button data-act="gal">Escolher da galeria</button>
+        </div>
+      </div>
+      <label class="check" for="ap${b.id}"><input type="checkbox" id="ap${b.id}" data-f="arrowsPerPhoto"> Seta sobre cada foto (em vez de ao lado do texto)</label>`;
+    el.querySelector("[data-f=items]").value = b.items;
+    el.querySelector("[data-f=obs]").value = b.obs;
+    el.querySelector("[data-f=arrowsPerPhoto]").checked = b.arrowsPerPhoto;
+    wrap.appendChild(el);
+  });
+  changed();
+}
+
+function blockOf(el) { const c = el.closest("[data-id]"); return c && state.blocks.find(b => b.id == c.dataset.id); }
+
+document.addEventListener("input", e => {
+  const b = blockOf(e.target), f = e.target.dataset.f;
+  if (b && f) b[f] = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+  saveDraft(); changed();
+});
+document.addEventListener("focusin", e => { const b = blockOf(e.target); if (b) activeBlock = b; });
+
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-act]"); if (!t) return;
+  const b = blockOf(t); if (!b) return;
+  activeBlock = b;
+  const i = state.blocks.indexOf(b), j = +t.dataset.j, act = t.dataset.act;
+  if (act === "cam" || act === "gal") { pickTarget = b; $(act === "cam" ? "#pickCamera" : "#pickGallery").click(); return; }
+  if (act === "up" && i > 0) [state.blocks[i - 1], state.blocks[i]] = [state.blocks[i], state.blocks[i - 1]];
+  else if (act === "down" && i < state.blocks.length - 1) [state.blocks[i + 1], state.blocks[i]] = [state.blocks[i], state.blocks[i + 1]];
+  else if (act === "del") {
+    if (!t.classList.contains("armed")) { t.classList.add("armed"); t.textContent = "Confirmar"; setTimeout(() => { t.classList.remove("armed"); t.textContent = "Excluir"; }, 3000); return; }
+    state.blocks.splice(i, 1);
+  }
+  else if (act === "pd") b.photos.splice(j, 1);
+  else if (act === "pl" && j > 0) [b.photos[j - 1], b.photos[j]] = [b.photos[j], b.photos[j - 1]];
+  else if (act === "pr" && j < b.photos.length - 1) [b.photos[j + 1], b.photos[j]] = [b.photos[j], b.photos[j + 1]];
+  else return;
+  render(); saveDraft();
+});
+
+$("#addBlock").onclick = () => {
+  const b = newBlock(); state.blocks.push(b); activeBlock = b; render(); saveDraft();
+  const el = document.getElementById("it" + b.id); el.scrollIntoView({ block: "center" }); el.focus({ preventScroll: true });
+};
+for (const id of ["#pickGallery", "#pickCamera"]) {
+  $(id).onchange = async e => { if (pickTarget) await addFiles(pickTarget, e.target.files); e.target.value = ""; };
+}
+
+/* arrastar e soltar */
+document.addEventListener("dragover", e => { const d = e.target.closest("[data-drop]"); if (d) { e.preventDefault(); d.classList.add("over"); } });
+document.addEventListener("dragleave", e => { const d = e.target.closest("[data-drop]"); if (d) d.classList.remove("over"); });
+document.addEventListener("drop", async e => {
+  const d = e.target.closest("[data-drop]"); if (!d) return;
+  e.preventDefault(); d.classList.remove("over");
+  await addFiles(blockOf(d), e.dataTransfer.files);
+});
+/* colar imagens (ex.: copiadas do WhatsApp Web) no bloco ativo */
+document.addEventListener("paste", async e => {
+  const files = [...(e.clipboardData?.items || [])].filter(x => x.type.startsWith("image/")).map(x => x.getAsFile());
+  if (!files.length) return;
+  e.preventDefault();
+  const b = activeBlock || state.blocks[state.blocks.length - 1];
+  if (b) { await addFiles(b, files); toast(`${files.length} foto(s) coladas no bloco ${state.blocks.indexOf(b) + 1}`); }
+});
+
+/* reduz e comprime cada foto para o PDF ficar leve */
+function prepImage(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      const max = 1600, k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+      const w = Math.round(img.naturalWidth * k), h = Math.round(img.naturalHeight * k);
+      const c = document.createElement("canvas"); c.width = w; c.height = h;
+      const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h); ctx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      const src = c.toDataURL("image/jpeg", 0.85), el = new Image();
+      el.onload = () => res({ src, w, h, el });
+      el.src = src;
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("Não consegui ler a imagem " + (file.name || ""))); };
+    img.src = url;
+  });
+}
+async function addFiles(b, files) {
+  const list = [...files].filter(f => f && f.type.startsWith("image/"));
+  if (!list.length) return;
+  toast(`Processando ${list.length} foto(s)…`);
+  for (const f of list) { try { b.photos.push(await prepImage(f)); } catch (err) { toast(err.message); } }
+  render(); toast(`${list.length} foto(s) adicionadas`);
+}
+
+/* ---------- layout do relatório (em mm, A4) ---------- */
+const PG = { w: 210, h: 297, ml: 20, mr: 20, top: 16, bottom: 14 };
+const ACCENT = "#2e5a7a";
+const MAXH = 80, SINGLE_W = 100, GAP = 5;
+
+function fmtDate(iso) { if (!iso) return ""; const [y, m, d] = iso.split("-"); return `${d}/${m}/${y}`; }
+function parseItems(text) { return text.split("\n").map(l => l.trim()).filter(Boolean).map(l => l.replace(/^\d+[.)]\s+/, "")); }
+
+function rowLayout(row, cw) {
+  const ar = row.map(p => p.h / p.w);
+  if (row.length === 1) { const H = Math.min(MAXH, SINGLE_W * ar[0]); return { H, ws: [H / ar[0]] }; }
+  const H = Math.min(MAXH, (cw - GAP) / (1 / ar[0] + 1 / ar[1]));
+  return { H, ws: ar.map(a => H / a) };
+}
+
+/* Calcula as páginas como uma lista de desenhos. O mesmo resultado
+   alimenta o PDF (jsPDF) e a prévia (canvas), então os dois ficam iguais. */
+function layout() {
+  const m = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+  const width = (s, size, bold) => { m.setFont("helvetica", bold ? "bold" : "normal"); m.setFontSize(size); return m.getTextWidth(s); };
+  const wrap = (s, size, w) => { m.setFont("helvetica", "normal"); m.setFontSize(size); return m.splitTextToSize(s, w); };
+  const cw = PG.w - PG.ml - PG.mr, limit = PG.h - PG.bottom - 8;
+  const dateTxt = fmtDate($("#fDate").value), title = $("#fTitle").value.trim();
+  const pages = []; let ops, y, n = 0;
+  const T = (s, x, yy, size, bold = false, align = "left") => ops.push({ t: "text", s, x, y: yy, size, bold, align });
+  const newPage = () => { ops = []; pages.push(ops); T(dateTxt, PG.ml, PG.top + 4, 9); y = PG.top + 13; };
+  const ensure = h => { if (y + h > limit && y > PG.top + 14) newPage(); };
+  newPage();
+
+  if (title) { wrap(title, 9, cw).forEach(l => { T(l, PG.ml, y, 9); y += 4; }); y += 4; }
+
+  const restart = $("#fRestart").checked;
+  for (const b of state.blocks) {
+    const items = parseItems(b.items);
+    if (restart) n = 0;
+    const lines = items.map(t => wrap(t, 8.5, cw - 12));
+    const itemsH = lines.reduce((s, l) => s + l.length * 3.9 + 0.8, 0);
+    const rows = []; for (let i = 0; i < b.photos.length; i += 2) rows.push(b.photos.slice(i, i + 2));
+    const perPhoto = b.arrowsPerPhoto && b.photos.length > 0;
+    const obs = b.obs.trim(), obsH = obs ? 8 : 0;
+    const first = rows[0] ? rowLayout(rows[0], cw).H + (perPhoto ? 8 : 0) : 0;
+    if (!items.length && !obs && !rows.length) continue;
+    ensure(itemsH + obsH + first + 4);
+
+    items.forEach((t, k) => {
+      n++;
+      T(n + ".", PG.ml + 7, y, 8.5, false, "right");
+      const x = PG.ml + 10, mm = t.match(/^(.*:\s*)([\d.,]+)\s*$/);
+      if (lines[k].length === 1 && mm) {
+        const pre = mm[1].trimEnd(), sp = width("a a", 8.5) - width("aa", 8.5);
+        T(pre, x, y, 8.5); T(mm[2], x + width(pre, 8.5) + sp, y, 8.5, true); y += 4.7;
+      } else { lines[k].forEach(l => { T(l, x, y, 8.5); y += 3.9; }); y += 0.8; }
+    });
+    if (items.length) y += 2.5;
+
+    if (obs) {
+      T(obs, PG.ml, y, 9, true);
+      if (!perPhoto) ops.push({ t: "arrow", cx: Math.min(PG.ml + width(obs, 9, true) + 5, PG.w - PG.mr - 3), top: y - 4.2, s: 6 });
+      y += perPhoto ? 3 : 4;
+    }
+
+    rows.forEach((row, ri) => {
+      const L = rowLayout(row, cw);
+      if (ri > 0) ensure(L.H + (perPhoto ? 8 : 0) + 2);
+      let x = PG.ml;
+      if (perPhoto) { let ax = x; L.ws.forEach(w => { ops.push({ t: "arrow", cx: ax + w / 2, top: y, s: 6 }); ax += w + GAP; }); y += 8; }
+      row.forEach((p, k) => { ops.push({ t: "img", p, x, y, w: L.ws[k], h: L.H }); x += L.ws[k] + GAP; });
+      y += L.H + 3;
+    });
+    y += 3;
+  }
+
+  // rodapé "Página X de Y" com números em negrito
+  pages.forEach((o, i) => {
+    const parts = [["Página ", false], [String(i + 1), true], [" de ", false], [String(pages.length), true]];
+    let x = (PG.w - parts.reduce((s, [t, b]) => s + width(t, 9, b), 0)) / 2;
+    parts.forEach(([t, b]) => { o.push({ t: "text", s: t, x, y: PG.h - PG.bottom, size: 9, bold: b, align: "left" }); x += width(t, 9, b); });
+  });
+  return pages;
+}
+
+function toPDF(pages) {
+  const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4", compress: true });
+  pages.forEach((ops, i) => {
+    if (i) doc.addPage();
+    for (const o of ops) {
+      if (o.t === "text") { doc.setFont("helvetica", o.bold ? "bold" : "normal"); doc.setFontSize(o.size); doc.setTextColor(0); doc.text(o.s, o.x, o.y, { align: o.align }); }
+      else if (o.t === "img") doc.addImage(o.p.src, "JPEG", o.x, o.y, o.w, o.h);
+      else if (o.t === "arrow") {
+        const sw = o.s * 0.38, sh = o.s * 0.42; doc.setFillColor(ACCENT);
+        doc.rect(o.cx - sw / 2, o.top, sw, sh, "F");
+        doc.triangle(o.cx - o.s / 2, o.top + sh, o.cx + o.s / 2, o.top + sh, o.cx, o.top + o.s, "F");
+      }
+    }
+  });
+  return doc;
+}
+
+function drawPage(ops, canvas, cssW) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), k = cssW / PG.w * dpr;
+  canvas.width = Math.round(PG.w * k); canvas.height = Math.round(PG.h * k);
+  const c = canvas.getContext("2d");
+  c.setTransform(k, 0, 0, k, 0, 0);
+  c.fillStyle = "#fff"; c.fillRect(0, 0, PG.w, PG.h);
+  for (const o of ops) {
+    if (o.t === "text") {
+      c.fillStyle = "#000"; c.textBaseline = "alphabetic"; c.textAlign = o.align;
+      c.font = `${o.bold ? "bold " : ""}${o.size * 0.3528}px Helvetica, Arial, sans-serif`;
+      c.fillText(o.s, o.x, o.y);
+    } else if (o.t === "img") c.drawImage(o.p.el, o.x, o.y, o.w, o.h);
+    else if (o.t === "arrow") {
+      const sw = o.s * 0.38, sh = o.s * 0.42; c.fillStyle = ACCENT;
+      c.fillRect(o.cx - sw / 2, o.top, sw, sh);
+      c.beginPath(); c.moveTo(o.cx - o.s / 2, o.top + sh); c.lineTo(o.cx + o.s / 2, o.top + sh); c.lineTo(o.cx, o.top + o.s); c.closePath(); c.fill();
+    }
+  }
+}
+
+function renderPreview(box, info) {
+  if (!window.jspdf) { box.innerHTML = `<div class="empty">A biblioteca de PDF não carregou. Verifique a internet e recarregue a página.</div>`; return; }
+  if (!hasContent()) { box.innerHTML = `<div class="empty">Preencha itens ou adicione fotos em um bloco para ver as páginas aqui.</div>`; info.textContent = ""; return; }
+  const pages = layout();
+  box.innerHTML = "";
+  const w = Math.max(200, box.clientWidth - 28);
+  pages.forEach((ops, i) => { const cv = document.createElement("canvas"); cv.setAttribute("aria-label", `Página ${i + 1}`); box.appendChild(cv); drawPage(ops, cv, w); });
+  info.textContent = `${pages.length} página(s)`;
+}
+
+/* atualização da prévia lateral (computador) */
+let pvTimer;
+function changed() {
+  updateStat();
+  clearTimeout(pvTimer);
+  pvTimer = setTimeout(() => { if (getComputedStyle($("#sidePreview")).display !== "none") renderPreview($("#sidePages"), $("#pvInfo")); }, 350);
+}
+window.addEventListener("resize", changed);
+
+/* prévia em tela cheia (celular) */
+$("#btnPreview").onclick = () => {
+  if (!hasContent()) { toast("Adicione itens ou fotos em pelo menos um bloco."); return; }
+  $("#overlay").hidden = false; document.body.style.overflow = "hidden";
+  renderPreview($("#ovPages"), $("#ovInfo"));
+};
+$("#closeOverlay").onclick = () => { $("#overlay").hidden = true; document.body.style.overflow = ""; };
+
+/* ---------- download ---------- */
+function fileName() { return `221_Auditoria_${$("#fDate").value || "sem-data"}.pdf`; }
+function hasContent() { return state.blocks.some(b => b.items.trim() || b.photos.length); }
+
+async function download() {
+  if (!hasContent()) { toast("Adicione itens ou fotos em pelo menos um bloco."); return; }
+  if (!window.jspdf) { toast("A biblioteca de PDF não carregou. Verifique a internet e recarregue."); return; }
+  const doc = toPDF(layout());
+  if (!window.claude) { doc.save(fileName()); toast("PDF baixado: " + fileName()); return; } // arquivo aberto direto no navegador
+  const dl = await window.claude.use("downloads");
+  if (!dl) { toast("O download não está disponível nesta visualização. Abra a página no app Claude ou em claude.ai."); return; }
+  try { await dl.save({ filename: fileName(), data: doc.output("blob") }); toast("PDF salvo: " + fileName()); }
+  catch (err) {
+    if (err?.code === "declined") return;
+    if (err?.code === "rate_limited") toast("Já existe um download aguardando confirmação.");
+    else toast("Não foi possível salvar o PDF. Tente de novo em instantes.");
+  }
+}
+$("#btnSave").onclick = download;
+$("#ovSave").onclick = download;
+
+function updateStat() {
+  const items = state.blocks.reduce((s, b) => s + parseItems(b.items).length, 0);
+  const fotos = state.blocks.reduce((s, b) => s + b.photos.length, 0);
+  $("#stat").textContent = `${state.blocks.length} bloco(s) · ${items} item(ns) · ${fotos} foto(s)`;
+}
+let tt; function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => t.hidden = true, 2600); }
+
+/* ---------- início ---------- */
+$("#fDate").value = new Date().toLocaleDateString("sv-SE");
+if (!loadDraft()) state.blocks = [newBlock()];
+activeBlock = state.blocks[0];
+render();
+</script>
+
+</body></html>
