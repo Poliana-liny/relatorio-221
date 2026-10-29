@@ -1,5 +1,14 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2e5a7a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Relatório 221">
+<style>body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
 <title>Gerador Relatório 221</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -19,6 +28,7 @@
   --bg:#11161b; --panel:#1a2128; --fg:#e3e9ef; --muted:#93a1ae; --line:#2d3842;
   --accent:#74a7cc; --accent-fg:#0c1720; --accent-soft:#1e3141; --danger:#f2867e; --paper:#f4f4f2; color-scheme:dark}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--sans);
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 header.top{padding-block:16px 4px}
@@ -86,6 +96,7 @@ button.add{border-style:dashed;color:var(--accent);font-weight:600;padding:14px;
   .actionbar button{flex:1}
 }
 @media (hover:none){ .hide-touch{display:none} }
+@media (max-width:420px){ #ovInfo{display:none} }
 @media (prefers-reduced-motion:no-preference){button{transition:border-color .15s}}
 </style>
 
@@ -116,13 +127,14 @@ button.add{border-style:dashed;color:var(--accent);font-weight:600;padding:14px;
 </main>
 
 <div class="overlay" id="overlay" hidden>
-  <div class="pvbar"><button class="icon" id="closeOverlay">✕ Fechar</button><span id="ovInfo"></span><button class="primary" id="ovSave">Baixar PDF</button></div>
+  <div class="pvbar"><button class="icon" id="closeOverlay">✕ Fechar</button><span id="ovInfo"></span><span style="display:flex;gap:8px"><button id="ovShare" hidden>Compartilhar</button><button class="primary" id="ovSave">Baixar PDF</button></span></div>
   <div class="pages" id="ovPages"></div>
 </div>
 
 <div class="actionbar">
   <span class="stat" id="stat"></span>
   <button id="btnPreview">Ver prévia</button>
+  <button id="btnShare" hidden>Compartilhar</button>
   <button class="primary" id="btnSave">Baixar PDF</button>
 </div>
 <div class="toast" id="toast" hidden></div>
@@ -438,22 +450,30 @@ $("#closeOverlay").onclick = () => { $("#overlay").hidden = true; document.body.
 function fileName() { return `221_Auditoria_${$("#fDate").value || "sem-data"}.pdf`; }
 function hasContent() { return state.blocks.some(b => b.items.trim() || b.photos.length); }
 
-async function download() {
-  if (!hasContent()) { toast("Adicione itens ou fotos em pelo menos um bloco."); return; }
-  if (!window.jspdf) { toast("A biblioteca de PDF não carregou. Verifique a internet e recarregue."); return; }
-  const doc = toPDF(layout());
-  if (!window.claude) { doc.save(fileName()); toast("PDF baixado: " + fileName()); return; } // arquivo aberto direto no navegador
-  const dl = await window.claude.use("downloads");
-  if (!dl) { toast("O download não está disponível nesta visualização. Abra a página no app Claude ou em claude.ai."); return; }
-  try { await dl.save({ filename: fileName(), data: doc.output("blob") }); toast("PDF salvo: " + fileName()); }
-  catch (err) {
-    if (err?.code === "declined") return;
-    if (err?.code === "rate_limited") toast("Já existe um download aguardando confirmação.");
-    else toast("Não foi possível salvar o PDF. Tente de novo em instantes.");
-  }
+function buildFile() {
+  if (!hasContent()) { toast("Adicione itens ou fotos em pelo menos um bloco."); return null; }
+  if (!window.jspdf) { toast("A biblioteca de PDF não carregou. Verifique a internet e recarregue."); return null; }
+  return toPDF(layout());
+}
+function download() {
+  const doc = buildFile(); if (!doc) return;
+  doc.save(fileName()); toast("PDF gerado: " + fileName());
+}
+/* Compartilhar (celular): abre a tela do sistema para mandar no WhatsApp, salvar em Arquivos etc. */
+async function share() {
+  const doc = buildFile(); if (!doc) return;
+  const file = new File([doc.output("blob")], fileName(), { type: "application/pdf" });
+  try { await navigator.share({ files: [file], title: fileName() }); }
+  catch (err) { if (err && err.name !== "AbortError") { doc.save(fileName()); } }
 }
 $("#btnSave").onclick = download;
 $("#ovSave").onclick = download;
+try {
+  const probe = new File(["x"], "t.pdf", { type: "application/pdf" });
+  if (navigator.canShare && navigator.canShare({ files: [probe] })) {
+    for (const id of ["#btnShare", "#ovShare"]) { $(id).hidden = false; $(id).onclick = share; }
+  }
+} catch (e) {}
 
 function updateStat() {
   const items = state.blocks.reduce((s, b) => s + parseItems(b.items).length, 0);
@@ -469,4 +489,5 @@ activeBlock = state.blocks[0];
 render();
 </script>
 
-</body></html>
+</body>
+</html>
